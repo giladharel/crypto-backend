@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://crypto-backend-b5dhw5cra-crypto-gilad.vercel.app/"
+    "https://crypto-backend-b5dhw5cra-crypto-gilad.vercel.app"
   ],
   credentials: true
 }));
