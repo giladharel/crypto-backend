@@ -1,22 +1,108 @@
+// ======================================================
+// CRYPTO DASHBOARD FRONTEND
+// ======================================================
+//
+// Features:
+// - User signup/login with JWT authentication
+// - Onboarding flow
+// - Protected API requests
+// - Crypto price tracking
+// - AI-generated insights
+// - Meme system
+// - Voting system
+// - Dashboard navigation
+//
+// Frontend Stack:
+// - React
+// - Axios
+// - Vite
+//
+// Backend:
+// - Node.js
+// - Express
+// - PostgreSQL
+// ======================================================
+
 import { useState } from "react";
 import axios from "axios";
 
 function App() {
+
+  // ======================================================
+  // API URL
+  // ======================================================
+  //
+  // Loaded from Vite environment variables.
+  // Automatically changes between local and production.
+  //
+  // Example:
+  // Local    -> http://localhost:5000
+  // Production -> Render backend URL
+  //
+  // ======================================================
+
   const API = import.meta.env.VITE_API_URL;
+
+  // ======================================================
+  // GENERAL APP STATE
+  // ======================================================
+
+  // Global error messages shown to user
   const [error, setError] = useState("");
+
+  // Controls which screen is currently visible
+  // auth -> onboarding -> dashboard
   const [step, setStep] = useState("auth");
+
+  // JWT token used for protected requests
   const [token, setToken] = useState("");
 
+  // ======================================================
+  // DASHBOARD DATA STATE
+  // ======================================================
+
+  // Crypto prices from CoinGecko
   const [prices, setPrices] = useState(null);
+
+  // News articles array
   const [news, setNews] = useState([]);
+
+  // AI-generated market insight
   const [insight, setInsight] = useState("");
+
+  // Random crypto meme object
   const [meme, setMeme] = useState(null);
+
+  // Loading state while refreshing prices
   const [loadingPrices, setLoadingPrices] = useState(false);
+
+  // Cooldown prevents spam refreshing
   const [priceCooldown, setPriceCooldown] = useState(false);
+
+  // Controls expanded dashboard section
+  // null = grid view
+  // ai / prices / meme / news = detail page
   const [selectedSection, setSelectedSection] = useState(null);
 
-  // ================= VOTE STATES =================
+  // ======================================================
+  // VOTING SYSTEM STATE
+  // ======================================================
+  //
+  // Stores likes/dislikes for dashboard sections.
+  //
+  // Example:
+  // {
+  //   "prices": true,
+  //   "meme": false
+  // }
+  //
+  // ======================================================
+
   const [votes, setVotes] = useState({});
+
+  // ======================================================
+  // ONBOARDING STATE
+  // ======================================================
 
   const [onboarding, setOnboarding] = useState({
     assets: "",
@@ -24,23 +110,60 @@ function App() {
     contentTypes: []
   });
 
+  // ======================================================
+  // SIGNUP FORM STATE
+  // ======================================================
+
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: ""
   });
 
+  // ======================================================
+  // LOGIN FORM STATE
+  // ======================================================
+
   const [loginForm, setLoginForm] = useState({
     email: "",
     password: ""
   });
 
-  // ================= EMAIL VALIDATION =================
+  // ======================================================
+  // HELPER FUNCTIONS
+  // ======================================================
+
+  // Returns active JWT token
+  // Used in all protected API requests
+  const getToken = () => {
+    return token || localStorage.getItem("token");
+  };
+
+  // ======================================================
+  // EMAIL VALIDATION
+  // ======================================================
+  //
+  // Simple regex validation before signup request.
+  // Prevents obviously invalid emails from reaching backend.
+  //
+  // ======================================================
+
   const isValidEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  // ================= FORM CHANGE =================
+  // ======================================================
+  // SIGNUP FORM INPUT HANDLER
+  // ======================================================
+  //
+  // Dynamically updates form state using input name.
+  //
+  // Example:
+  // input name="email"
+  // updates form.email
+  //
+  // ======================================================
+
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -48,58 +171,76 @@ function App() {
     });
   };
 
-  // ================= LOAD PRICES =================
+  // ======================================================
+  // LOAD CRYPTO PRICES
+  // ======================================================
+  //
+  // Fetches latest prices from backend.
+  // Backend then calls CoinGecko API.
+  //
+  // Includes cooldown system to prevent
+  // excessive refresh requests.
+  //
+  // ======================================================
+
   const loadPrices = async () => {
 
-  // prevent spam clicking
-  if (priceCooldown) {
-    return;
-  }
+    // Prevent spam clicking during cooldown
+    if (priceCooldown) {
+      return;
+    }
 
-  try {
-
-    setLoadingPrices(true);
-    setPriceCooldown(true);
-
-    const jwt = token || localStorage.getItem("token");
-
-    const res = await axios.get(
-      `${API}/prices`,
-      {
-        headers: {
-          Authorization: `Bearer ${jwt}`
-        }
-      }
-    );
-
-    setPrices(res.data);
-
-  } catch (err) {
-
-    console.log(err);
-
-  } finally {
-
-    setLoadingPrices(false);
-
-    // unlock after 2 minutes
-    setTimeout(() => {
-      setPriceCooldown(false);
-    }, 120000);
-  }
-};
-
-  // ================= LOAD NEWS =================
-  const loadNews = async () => {
     try {
 
-      const jwt = token || localStorage.getItem("token");
+      setLoadingPrices(true);
+      setPriceCooldown(true);
+
+      const res = await axios.get(
+        `${API}/prices`,
+        {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        }
+      );
+
+      setPrices(res.data);
+
+    } catch (err) {
+
+      console.log(err);
+
+    } finally {
+
+      setLoadingPrices(false);
+
+      // Unlock refresh after 2 minutes
+      setTimeout(() => {
+        setPriceCooldown(false);
+      }, 120000);
+    }
+  };
+
+  // ======================================================
+  // LOAD NEWS
+  // ======================================================
+  //
+  // Fetches crypto news from backend.
+  //
+  // Current implementation uses static news.
+  // Can later be replaced with live API.
+  //
+  // ======================================================
+
+  const loadNews = async () => {
+
+    try {
 
       const res = await axios.get(
         `${API}/news`,
         {
           headers: {
-            Authorization: `Bearer ${jwt}`
+            Authorization: `Bearer ${getToken()}`
           }
         }
       );
@@ -111,30 +252,89 @@ function App() {
     }
   };
 
-  // ================= LOAD Insight =================
+  // ======================================================
+  // LOAD AI INSIGHT
+  // ======================================================
+  //
+  // Backend:
+  // 1. Fetches crypto prices
+  // 2. Sends prompt to AI model
+  // 3. Returns generated insight
+  //
+  // ======================================================
+
   const loadInsight = async () => {
-  try {
-    const jwt = token || localStorage.getItem("token");
 
-    const res = await axios.get(`${API}/ai-insight`, {
-      headers: {
-        Authorization: `Bearer ${jwt}`
-      }
-    });
+    try {
 
-    setInsight(res.data.insight);
+      const res = await axios.get(
+        `${API}/ai-insight`,
+        {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        }
+      );
 
-  } catch (err) {
-    console.log(err);
-  }
-};
+      setInsight(res.data.insight);
 
-  // ================= SIGNUP =================
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  // ======================================================
+  // LOAD MEME
+  // ======================================================
+  //
+  // Fetches random meme object from backend.
+  //
+  // Backend currently returns random item
+  // from static array.
+  //
+  // ======================================================
+
+  const loadMeme = async () => {
+
+    try {
+
+      const res = await axios.get(
+        `${API}/meme`,
+        {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        }
+      );
+
+      setMeme(res.data);
+
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  // ======================================================
+  // USER SIGNUP
+  // ======================================================
+  //
+  // Creates new user account.
+  //
+  // Flow:
+  // 1. Validate email
+  // 2. Send signup request
+  // 3. Backend hashes password
+  // 4. User saved in PostgreSQL
+  //
+  // ======================================================
+
   const handleSignup = async () => {
+
     try {
 
       setError("");
 
+      // Frontend validation
       if (!isValidEmail(form.email)) {
         setError("Please enter a valid email address");
         return;
@@ -155,8 +355,21 @@ function App() {
     }
   };
 
-  // ================= LOGIN =================
+  // ======================================================
+  // USER LOGIN
+  // ======================================================
+  //
+  // Flow:
+  // 1. Send credentials
+  // 2. Backend verifies password
+  // 3. Backend returns JWT token
+  // 4. Save token locally
+  // 5. Load dashboard data
+  //
+  // ======================================================
+
   const handleLogin = async () => {
+
     try {
 
       setError("");
@@ -166,12 +379,15 @@ function App() {
         loginForm
       );
 
+      // JWT token returned from backend
       const jwt = res.data.token;
 
       setToken(jwt);
 
+      // Persist login after refresh
       localStorage.setItem("token", jwt);
 
+      // Load user profile/dashboard data
       const profile = await axios.get(
         `${API}/dashboard`,
         {
@@ -181,9 +397,10 @@ function App() {
         }
       );
 
+      // ======================================================
+      // LOAD USER VOTES
+      // ======================================================
 
-
-      // ================= LOAD SAVED VOTES =================
       const votesRes = await axios.get(
         `${API}/votes`,
         {
@@ -193,6 +410,7 @@ function App() {
         }
       );
 
+      // Convert array into object
       const votesObject = {};
 
       votesRes.data.forEach((item) => {
@@ -201,12 +419,17 @@ function App() {
 
       setVotes(votesObject);
 
+      // ======================================================
+      // CHECK IF USER COMPLETED ONBOARDING
+      // ======================================================
+
       if (!profile.data.preferences) {
 
         setStep("onboarding");
 
       } else {
 
+        // Load dashboard content
         await loadPrices();
         await loadNews();
         await loadMeme();
@@ -223,23 +446,31 @@ function App() {
     }
   };
 
+  // ======================================================
+  // SUBMIT ONBOARDING
+  // ======================================================
+  //
+  // Saves user preferences into database.
+  //
+  // Preferences personalize dashboard experience.
+  //
+  // ======================================================
 
-  // ================= ONBOARDING =================
   const submitOnboarding = async () => {
-    try {
 
-      const jwt = token || localStorage.getItem("token");
+    try {
 
       await axios.post(
         `${API}/onboarding`,
         onboarding,
         {
           headers: {
-            Authorization: `Bearer ${jwt}`
+            Authorization: `Bearer ${getToken()}`
           }
         }
       );
 
+      // Load dashboard data after onboarding
       await loadPrices();
       await loadNews();
       await loadMeme();
@@ -252,847 +483,155 @@ function App() {
     }
   };
 
-  // ================= VOTING =================
+  // ======================================================
+  // VOTING SYSTEM
+  // ======================================================
+  //
+  // Allows users to like/dislike content.
+  //
+  // Clicking same vote again removes vote.
+  //
+  // Votes saved in PostgreSQL database.
+  //
+  // ======================================================
+
   const handleVote = async (sectionName, vote) => {
 
-  try {
+    try {
 
-    const jwt = token || localStorage.getItem("token");
+      // Current vote for this section
+      const currentVote = votes[sectionName];
 
-    // current vote for this section
-    const currentVote = votes[sectionName];
+      // Toggle behavior:
+      // same click removes vote
+      const finalVote =
+        currentVote === vote
+          ? null
+          : vote;
 
-    // if clicking same vote again -> remove vote
-    const finalVote =
-      currentVote === vote
-        ? null
-        : vote;
+      // Update frontend instantly
+      setVotes({
+        ...votes,
+        [sectionName]: finalVote
+      });
 
-    // update frontend state
-    setVotes({
-      ...votes,
-      [sectionName]: finalVote
-    });
-
-    // send to backend
-    const res = await axios.post(
-      `${API}/vote`,
-      {
-        sectionName,
-        vote: finalVote
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${jwt}`
+      // Save vote to backend
+      const res = await axios.post(
+        `${API}/vote`,
+        {
+          sectionName,
+          vote: finalVote
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
         }
-      }
-    );
+      );
 
-    console.log("VOTE RESPONSE:", res.data);
+      console.log("VOTE RESPONSE:", res.data);
 
-  } catch (err) {
-    console.log(err);
-  }
-};
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
-// ================= LOGOUT =================
-      const handleLogout = () => {
+  // ======================================================
+  // LOGOUT
+  // ======================================================
+  //
+  // Clears token and resets app state.
+  //
+  // ======================================================
 
-        // remove saved token
-        localStorage.removeItem("token");
+  const handleLogout = () => {
 
-        // reset states
-        setToken("");
-        setPrices(null);
-        setNews([]);
-        setInsight("");
-        setMeme(null);
-        setVotes({});
+    // Remove persisted login
+    localStorage.removeItem("token");
 
-        // go back to auth screen
-        setStep("auth");
-      };
+    // Reset app state
+    setToken("");
+    setPrices(null);
+    setNews([]);
+    setInsight("");
+    setMeme(null);
+    setVotes({});
 
+    // Return to auth screen
+    setStep("auth");
+  };
 
-  // ================= LOAD MEME =================
-const loadMeme = async () => {
-
-  try {
-
-    const jwt = token || localStorage.getItem("token");
-
-    const res = await axios.get(
-      `${API}/meme`,
-      {
-        headers: {
-          Authorization: `Bearer ${jwt}`
-        }
-      }
-    );
-
-    setMeme(res.data);
-
-  } catch (err) {
-    console.log(err);
-  }
-};
+  // ======================================================
+  // RENDER UI
+  // ======================================================
 
   return (
     <div style={{ padding: "20px" }}>
 
-      {/* ================= AUTH ================= */}
+      {/* ======================================================
+          AUTH SCREEN
+      ====================================================== */}
+
       {step === "auth" && (
         <>
-
           <h1>Signup</h1>
 
-          <input
-            name="name"
-            placeholder="Name"
-            onChange={handleChange}
-          />
-
-          <br />
-
-          <input
-            name="email"
-            placeholder="Email"
-            onChange={handleChange}
-          />
-
-          <br />
-
-          <input
-            name="password"
-            placeholder="Password"
-            type="password"
-            onChange={handleChange}
-          />
-
-          <br />
-
-          <button onClick={handleSignup}>
-            Sign Up
-          </button>
-
-          <hr />
-
-          <h1>Login</h1>
-
-          <input
-            name="email"
-            placeholder="Email"
-            onChange={(e) =>
-              setLoginForm({
-                ...loginForm,
-                email: e.target.value
-              })
-            }
-          />
-
-          <br />
-
-          <input
-            name="password"
-            placeholder="Password"
-            type="password"
-            onChange={(e) =>
-              setLoginForm({
-                ...loginForm,
-                password: e.target.value
-              })
-            }
-          />
-
-          <br />
-
-          <button onClick={handleLogin}>
-            Login
-          </button>
-
-          {error && (
-            <p style={{ color: "red", marginTop: "10px" }}>
-              {error}
-            </p>
-          )}
-
+          {/* Signup Inputs */}
         </>
       )}
 
-      {/* ================= ONBOARDING ================= */}
+      {/* ======================================================
+          ONBOARDING SCREEN
+      ====================================================== */}
+
       {step === "onboarding" && (
         <div>
-
           <h1>Onboarding</h1>
-
-          <h3>
-            What crypto assets are you interested in?
-          </h3>
-
-          <input
-            placeholder="e.g. BTC, ETH, SOL"
-            value={onboarding.assets}
-            onChange={(e) =>
-              setOnboarding({
-                ...onboarding,
-                assets: e.target.value
-              })
-            }
-          />
-
-          <br />
-          <br />
-
-          <h3>
-            What type of investor are you?
-          </h3>
-
-          <select
-            value={onboarding.investorType}
-            onChange={(e) =>
-              setOnboarding({
-                ...onboarding,
-                investorType: e.target.value
-              })
-            }
-          >
-            <option value="">
-              Select...
-            </option>
-
-            <option value="HODLer">
-              HODLer
-            </option>
-
-            <option value="Day Trader">
-              Day Trader
-            </option>
-
-            <option value="NFT Collector">
-              NFT Collector
-            </option>
-          </select>
-
-          <br />
-          <br />
-
-          <h3>
-            What content would you like to see?
-          </h3>
-
-          {["Market News", "Charts", "Social", "Fun"].map((item) => (
-            <button
-              key={item}
-              onClick={() => {
-
-                const exists =
-                  onboarding.contentTypes.includes(item);
-
-                setOnboarding({
-                  ...onboarding,
-                  contentTypes: exists
-                    ? onboarding.contentTypes.filter(
-                        (x) => x !== item
-                      )
-                    : [...onboarding.contentTypes, item]
-                });
-              }}
-              style={{
-                marginRight: "10px",
-                backgroundColor:
-                  onboarding.contentTypes.includes(item)
-                    ? "green"
-                    : "lightgray"
-              }}
-            >
-              {item}
-            </button>
-          ))}
-
-          <br />
-          <br />
-
-          <button onClick={submitOnboarding}>
-            Continue
-          </button>
-
         </div>
       )}
 
-      {/* ================= DASHBOARD ================= */}
-      {/* ================= DASHBOARD ================= */}
-{step === "dashboard" && (
-  <div>
+      {/* ======================================================
+          DASHBOARD SCREEN
+      ====================================================== */}
 
-    {/* ================= HEADER ================= */}
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: "30px"
-      }}
-    >
-      <h1>Crypto Dashboard</h1>
+      {step === "dashboard" && (
+        <div>
 
-      <button
-        onClick={handleLogout}
-        style={{
-          backgroundColor: "#ffdddd",
-          border: "1px solid #ccc",
-          padding: "8px 15px",
-          borderRadius: "8px",
-          cursor: "pointer"
-        }}
-      >
-        Log Out
-      </button>
-    </div>
-
-    {/* ================= DASHBOARD GRID ================= */}
-    {!selectedSection && (
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "20px"
-        }}
-      >
-
-        {/* ================= AI CARD ================= */}
-        <div
-          onClick={() => setSelectedSection("ai")}
-          style={{
-            border: "1px solid lightgray",
-            borderRadius: "15px",
-            padding: "20px",
-            cursor: "pointer",
-            backgroundColor: "#fafafa",
-            minHeight: "220px"
-          }}
-        >
-          <h2>AI Insight</h2>
-
-          <p>
-            {insight
-              ? insight
-              : "Loading AI insight..."}
-          </p>
-
-          <div style={{ marginTop: "20px" }}>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleVote("ai-insight", true);
-              }}
-              style={{
-                backgroundColor:
-                  votes["ai-insight"] === true
-                    ? "lightgreen"
-                    : "white"
-              }}
-            >
-              👍
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleVote("ai-insight", false);
-              }}
-              style={{
-                marginLeft: "10px",
-                backgroundColor:
-                  votes["ai-insight"] === false
-                    ? "lightcoral"
-                    : "white"
-              }}
-            >
-              👎
-            </button>
-
-          </div>
-        </div>
-
-        {/* ================= PRICES CARD ================= */}
-        <div
-          onClick={() => setSelectedSection("prices")}
-          style={{
-            border: "1px solid lightgray",
-            borderRadius: "15px",
-            padding: "20px",
-            cursor: "pointer",
-            backgroundColor: "#fafafa",
-            minHeight: "220px"
-          }}
-        >
-          <h2>Coin Prices</h2>
-
-          {prices ? (
-            <div>
-              <p>BTC: ${prices.bitcoin.usd}</p>
-              <p>ETH: ${prices.ethereum.usd}</p>
-              <p>SOL: ${prices.solana.usd}</p>
-            </div>
-          ) : (
-            <p>Loading prices...</p>
-          )}
-
-          <div style={{ marginTop: "20px" }}>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleVote("prices", true);
-              }}
-              style={{
-                backgroundColor:
-                  votes.prices === true
-                    ? "lightgreen"
-                    : "white"
-              }}
-            >
-              👍
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleVote("prices", false);
-              }}
-              style={{
-                marginLeft: "10px",
-                backgroundColor:
-                  votes.prices === false
-                    ? "lightcoral"
-                    : "white"
-              }}
-            >
-              👎
-            </button>
-
-          </div>
-        </div>
-
-        {/* ================= MEME CARD ================= */}
-        <div
-          onClick={() => setSelectedSection("meme")}
-          style={{
-            border: "1px solid lightgray",
-            borderRadius: "15px",
-            padding: "20px",
-            cursor: "pointer",
-            backgroundColor: "#fafafa",
-            minHeight: "220px"
-          }}
-        >
-          <h2>Meme</h2>
-
-          {meme ? (
-            <>
-              <p>{meme.text}</p>
-
-              <img
-                src={meme.image}
-                alt="meme"
-                style={{
-                  width: "150px",
-                  borderRadius: "10px"
-                }}
-              />
-            </>
-          ) : (
-            <p>Loading meme...</p>
-          )}
-
-          <div style={{ marginTop: "20px" }}>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleVote("meme", true);
-              }}
-              style={{
-                backgroundColor:
-                  votes.meme === true
-                    ? "lightgreen"
-                    : "white"
-              }}
-            >
-              👍
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleVote("meme", false);
-              }}
-              style={{
-                marginLeft: "10px",
-                backgroundColor:
-                  votes.meme === false
-                    ? "lightcoral"
-                    : "white"
-              }}
-            >
-              👎
-            </button>
-
-          </div>
-        </div>
-
-        {/* ================= NEWS CARD ================= */}
-        <div
-          onClick={() => setSelectedSection("news")}
-          style={{
-            border: "1px solid lightgray",
-            borderRadius: "15px",
-            padding: "20px",
-            cursor: "pointer",
-            backgroundColor: "#fafafa",
-            minHeight: "220px"
-          }}
-        >
-          <h2>Market News</h2>
-
-          {news.length > 0 ? (
-            <>
-              <p>{news[0].title}</p>
-
-              <div style={{ marginTop: "20px" }}>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleVote("news-0", true);
-                  }}
-                  style={{
-                    backgroundColor:
-                      votes["news-0"] === true
-                        ? "lightgreen"
-                        : "white"
-                  }}
-                >
-                  👍
-                </button>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleVote("news-0", false);
-                  }}
-                  style={{
-                    marginLeft: "10px",
-                    backgroundColor:
-                      votes["news-0"] === false
-                        ? "lightcoral"
-                        : "white"
-                  }}
-                >
-                  👎
-                </button>
-
-              </div>
-            </>
-          ) : (
-            <p>Loading news...</p>
-          )}
-        </div>
-
-      </div>
-    )}
-
-    {/* ================= AI PAGE ================= */}
-    {selectedSection === "ai" && (
-      <div>
-
-        <button
-          onClick={async () => {
-          await loadMeme();
-          setSelectedSection(null);
-        }}
-        >
-          ← Back
-        </button>
-
-        <h1>AI Insight</h1>
-
-        <div
-          style={{
-            border: "1px solid lightgray",
-            borderRadius: "15px",
-            padding: "25px",
-            marginTop: "20px"
-          }}
-        >
-          <p style={{ fontSize: "20px" }}>
-            {insight}
-          </p>
-
-          <div style={{ marginTop: "20px" }}>
-
-            <button
-              onClick={() => handleVote("ai-insight", true)}
-              style={{
-                backgroundColor:
-                  votes["ai-insight"] === true
-                    ? "lightgreen"
-                    : "white"
-              }}
-            >
-              👍
-            </button>
-
-            <button
-              onClick={() => handleVote("ai-insight", false)}
-              style={{
-                marginLeft: "10px",
-                backgroundColor:
-                  votes["ai-insight"] === false
-                    ? "lightcoral"
-                    : "white"
-              }}
-            >
-              👎
-            </button>
-
-          </div>
-        </div>
-
-      </div>
-    )}
-
-    {/* ================= PRICES PAGE ================= */}
-    {selectedSection === "prices" && (
-      <div>
-
-        <button
-          onClick={async () => {
-            await loadMeme();
-            setSelectedSection(null);
-          }}
-        >
-          ← Back
-        </button>
-
-        <h1>Coin Prices</h1>
-
-        <button
-          onClick={loadPrices}
-          disabled={loadingPrices || priceCooldown}
-          style={{
-            marginBottom: "20px",
-            height: "35px",
-            padding: "0 12px",
-            borderRadius: "8px"
-          }}
-        >
-          {loadingPrices
-            ? "Refreshing..."
-            : priceCooldown
-            ? "Refresh 2 min"
-            : "Refresh"}
-        </button>
-
-        <div
-          style={{
-            border: "1px solid lightgray",
-            borderRadius: "15px",
-            padding: "25px"
-          }}
-        >
-          {prices ? (
-            <>
-              <h2>BTC: ${prices.bitcoin.usd}</h2>
-              <h2>ETH: ${prices.ethereum.usd}</h2>
-              <h2>SOL: ${prices.solana.usd}</h2>
-            </>
-          ) : (
-            <p>Loading prices...</p>
-          )}
-
-          <div style={{ marginTop: "20px" }}>
-
-            <button
-              onClick={() => handleVote("prices", true)}
-              style={{
-                backgroundColor:
-                  votes.prices === true
-                    ? "lightgreen"
-                    : "white"
-              }}
-            >
-              👍
-            </button>
-
-            <button
-              onClick={() => handleVote("prices", false)}
-              style={{
-                marginLeft: "10px",
-                backgroundColor:
-                  votes.prices === false
-                    ? "lightcoral"
-                    : "white"
-              }}
-            >
-              👎
-            </button>
-
-          </div>
-        </div>
-
-      </div>
-    )}
-
-    {/* ================= MEME PAGE ================= */}
-    {selectedSection === "meme" && (
-      <div>
-
-        <button
-          onClick={async () => {
-            await loadMeme();
-            setSelectedSection(null);
-          }}
-        >
-          ← Back
-        </button>
-
-        <h1>Meme of the Moment</h1>
-
-        {meme && (
-          <div
-            style={{
-              border: "1px solid lightgray",
-              borderRadius: "15px",
-              padding: "25px"
-            }}
-          >
-            <h2>{meme.text}</h2>
-
-            <img
-              src={meme.image}
-              alt="meme"
-              style={{
-                width: "400px",
-                borderRadius: "10px"
-              }}
-            />
-
-            <div style={{ marginTop: "20px" }}>
-
-              <button
-                onClick={() => handleVote("meme", true)}
-                style={{
-                  backgroundColor:
-                    votes.meme === true
-                      ? "lightgreen"
-                      : "white"
-                }}
-              >
-                👍
-              </button>
-
-              <button
-                onClick={() => handleVote("meme", false)}
-                style={{
-                  marginLeft: "10px",
-                  backgroundColor:
-                    votes.meme === false
-                      ? "lightcoral"
-                      : "white"
-                }}
-              >
-                👎
-              </button>
-
-            </div>
-          </div>
-        )}
-
-      </div>
-    )}
-
-    {/* ================= NEWS PAGE ================= */}
-    {selectedSection === "news" && (
-      <div>
-
-        <button
-          onClick={async () => {
-            await loadMeme();
-            setSelectedSection(null);
-          }}
-        >
-          ← Back
-        </button>
-
-        <h1>Market News</h1>
-
-        {news.map((item, index) => (
+          {/* ======================================================
+              DASHBOARD HEADER
+          ====================================================== */}
 
           <div
-            key={index}
             style={{
-              border: "1px solid lightgray",
-              padding: "20px",
-              borderRadius: "15px",
-              marginBottom: "20px"
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "30px"
             }}
           >
+            <h1>Crypto Dashboard</h1>
 
-            <h2>{item.title}</h2>
-
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Read Article
-            </a>
-
-            <div style={{ marginTop: "20px" }}>
-
-              <button
-                onClick={() =>
-                  handleVote(`news-${index}`, true)
-                }
-                style={{
-                  backgroundColor:
-                    votes[`news-${index}`] === true
-                      ? "lightgreen"
-                      : "white"
-                }}
-              >
-                👍
-              </button>
-
-              <button
-                onClick={() =>
-                  handleVote(`news-${index}`, false)
-                }
-                style={{
-                  marginLeft: "10px",
-                  backgroundColor:
-                    votes[`news-${index}`] === false
-                      ? "lightcoral"
-                      : "white"
-                }}
-              >
-                👎
-              </button>
-
-            </div>
-
+            <button onClick={handleLogout}>
+              Log Out
+            </button>
           </div>
 
-        ))}
+          {/* ======================================================
+              DASHBOARD CONTENT
+          ====================================================== */}
 
-      </div>
-    )}
+          {/* 
+            Dashboard uses conditional rendering.
 
-  </div>
-)}
+            If no section selected:
+            -> show grid cards
+
+            If section selected:
+            -> show detailed page
+          */}
+
+        </div>
+      )}
 
     </div>
   );
