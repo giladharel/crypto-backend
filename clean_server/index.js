@@ -1,59 +1,92 @@
+// ================= CORE IMPORTS =================
+// These are the main libraries that power the backend
+// Express = server framework
+// CORS = allows frontend to talk to backend
+// JWT = authentication tokens
+// bcrypt = password hashing (security)
+// axios = API calls to external services
+// dotenv = loads environment variables
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const pool = require("./db");
 const axios = require("axios");
-const app = express();
 require("dotenv").config();
+
+// Database connection (PostgreSQL pool)
+const pool = require("./db");
+
+const app = express();
 const PORT = process.env.PORT || 5000;
 
+// ================= MIDDLEWARE =================
+// Middleware = code that runs BEFORE every request
 
-
-app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://crypto-backend-b5dhw5cra-crypto-gilad.vercel.app"
-  ],
-  credentials: true
-}));
+// Allows frontend to send JSON data
 app.use(express.json());
 
+// CORS = security rule that defines who can call this backend
+// Without this, frontend (Vercel) would be blocked
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173", // local development
+      "https://crypto-backend-b5dhw5cra-crypto-gilad.vercel.app", // production frontend
+    ],
+    credentials: true,
+  })
+);
+
+// ================= UTILITIES =================
+// Regular expression to validate email format
+// Prevents invalid email inputs before hitting database
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // ================= AUTH MIDDLEWARE =================
+// This protects routes that require login
+// It checks if the user has a valid JWT token
+
 function authMiddleware(req, res, next) {
+  // Extract token from Authorization header
   const token = req.headers.authorization?.split(" ")[1];
 
+  // If no token → user is not logged in
   if (!token) {
     return res.status(401).json({ error: "No token provided" });
   }
 
   try {
+    // Verify token using secret key
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Attach user info to request so next functions can use it
     req.user = decoded;
-    next();
+
+    next(); // continue to route
   } catch (err) {
     return res.status(401).json({ error: "Invalid token" });
   }
 }
 
-// ================= HEALTH CHECK =================
+// ================= BASIC HEALTH CHECK =================
+// Used to test if backend is alive
 app.get("/", (req, res) => {
   res.send("Backend is working!");
 });
 
-// ================= SIGNUP =================
+// ================= AUTH ROUTES =================
+
+// REGISTER NEW USER
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
-    // email validation
+    // Step 1: validate email format
     if (!emailRegex.test(email)) {
       return res.status(400).json({ error: "Invalid email format" });
     }
 
-    // check duplicate email
+    // Step 2: check if user already exists
     const existingUser = await pool.query(
       "SELECT id FROM users WHERE email = $1",
       [email]
@@ -63,8 +96,10 @@ app.post("/signup", async (req, res) => {
       return res.status(400).json({ error: "Email already exists" });
     }
 
+    // Step 3: hash password (NEVER store plain passwords)
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Step 4: insert user into database
     const result = await pool.query(
       "INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id",
       [name, email, hashedPassword]
@@ -72,31 +107,20 @@ app.post("/signup", async (req, res) => {
 
     res.json({
       message: "User created",
-      userId: result.rows[0].id
+      userId: result.rows[0].id,
     });
-
   } catch (err) {
     console.error("SIGNUP ERROR:", err);
     res.status(500).json({ error: "Signup failed" });
   }
 });
 
-
-app.get("/test-db", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT NOW()");
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("DB error");
-  }
-});
-
-// ================= LOGIN =================
+// LOGIN USER
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    // Step 1: find user in DB
     const result = await pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
@@ -108,12 +132,14 @@ app.post("/login", async (req, res) => {
 
     const user = result.rows[0];
 
+    // Step 2: compare password with hashed password
     const isValid = await bcrypt.compare(password, user.password_hash);
 
     if (!isValid) {
       return res.status(400).json({ error: "Invalid email or password" });
     }
 
+    // Step 3: create JWT token (used for authentication in frontend)
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET,
@@ -122,17 +148,16 @@ app.post("/login", async (req, res) => {
 
     res.json({
       message: "Login successful",
-      token
+      token,
     });
-
   } catch (err) {
     console.error("LOGIN ERROR:", err);
     res.status(500).json({ error: "Login failed" });
   }
 });
 
-
-// ================= ME =================
+// ================= USER INFO =================
+// Returns logged-in user info (protected route)
 app.get("/me", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
@@ -147,23 +172,27 @@ app.get("/me", authMiddleware, async (req, res) => {
 });
 
 // ================= ONBOARDING =================
+// Saves user preferences after signup/login
+// This is used to personalize dashboard experience
 app.post("/onboarding", authMiddleware, async (req, res) => {
   const { assets, investorType, contentTypes } = req.body;
 
   try {
-    // validation
+    // Validate required fields
     if (!assets || !investorType || !contentTypes) {
       return res.status(400).json({
-        error: "Missing onboarding fields"
+        error: "Missing onboarding fields",
       });
     }
 
     const preferences = {
       assets,
       investorType,
-      contentTypes
+      contentTypes,
     };
 
+    // Insert or update user preferences
+    // ON CONFLICT = "upsert" (insert or update)
     const result = await pool.query(
       `
       INSERT INTO user_preferences (user_id, preferences)
@@ -172,14 +201,10 @@ app.post("/onboarding", authMiddleware, async (req, res) => {
       DO UPDATE SET preferences = $2
       RETURNING *
       `,
-      [
-        req.user.userId,
-        preferences
-      ]
+      [req.user.userId, preferences]
     );
 
     res.json(result.rows[0]);
-
   } catch (err) {
     console.error("ONBOARDING ERROR:", err);
     res.status(500).json({ error: "Failed to save onboarding" });
@@ -187,6 +212,7 @@ app.post("/onboarding", authMiddleware, async (req, res) => {
 });
 
 // ================= DASHBOARD =================
+// Combines user data + preferences into one response
 app.get("/dashboard", authMiddleware, async (req, res) => {
   try {
     const userResult = await pool.query(
@@ -199,92 +225,65 @@ app.get("/dashboard", authMiddleware, async (req, res) => {
       [req.user.userId]
     );
 
-    const preferences =
-      prefResult.rows.length > 0
-        ? prefResult.rows[0].preferences
-        : null;
-
     res.json({
       user: userResult.rows[0],
-      preferences
+      preferences: prefResult.rows[0]?.preferences || null,
     });
-
   } catch (err) {
     console.error("DASHBOARD ERROR:", err);
     res.status(500).json({ error: "Failed to load dashboard data" });
   }
 });
 
-// ================= COIN PRICES =================
+// ================= MARKET DATA =================
+
+// Gets live crypto prices from external API (CoinGecko)
 app.get("/prices", authMiddleware, async (req, res) => {
   try {
-
     const response = await axios.get(
       "https://api.coingecko.com/api/v3/simple/price",
       {
         params: {
           ids: "bitcoin,ethereum,solana",
-          vs_currencies: "usd"
-        }
+          vs_currencies: "usd",
+        },
       }
     );
 
     res.json(response.data);
-
   } catch (err) {
     console.error("PRICE ERROR:", err.message);
-
-    res.status(500).json({
-      error: "Failed to fetch prices"
-    });
+    res.status(500).json({ error: "Failed to fetch prices" });
   }
 });
 
-// ================= NEWS =================
+// Static news (placeholder data for now)
+// Later you could replace this with a real news API
 app.get("/news", authMiddleware, async (req, res) => {
-
   try {
-
-    // STATIC FALLBACK NEWS
-    // later you can replace with CryptoPanic API
-
-    const news = [
-      {
-        title: "Bitcoin Surges Above Key Resistance",
-        url: "https://www.coindesk.com/"
-      },
-      {
-        title: "Ethereum ETF Rumors Continue",
-        url: "https://cointelegraph.com/"
-      },
-      {
-        title: "Solana Ecosystem Keeps Growing",
-        url: "https://decrypt.co/"
-      }
-    ];
-
-    res.json(news);
-
+    res.json([
+      { title: "Bitcoin Surges Above Key Resistance", url: "https://www.coindesk.com/" },
+      { title: "Ethereum ETF Rumors Continue", url: "https://cointelegraph.com/" },
+      { title: "Solana Ecosystem Keeps Growing", url: "https://decrypt.co/" },
+    ]);
   } catch (err) {
-
     console.error("NEWS ERROR:", err);
-
-    res.status(500).json({
-      error: "Failed to load news"
-    });
+    res.status(500).json({ error: "Failed to load news" });
   }
 });
 
-// ================= AI INSIGHT (REAL FIXED) =================
+// ================= AI INSIGHT =================
+// Uses external AI model to generate short market analysis
 app.get("/ai-insight", authMiddleware, async (req, res) => {
   try {
+    // Step 1: get real market data
     const market = await axios.get(
       "https://api.coingecko.com/api/v3/simple/price",
       {
         params: {
           ids: "bitcoin,ethereum,solana",
-          vs_currencies: "usd"
-        }
+          vs_currencies: "usd",
+        },
       }
     );
 
@@ -292,210 +291,128 @@ app.get("/ai-insight", authMiddleware, async (req, res) => {
     const eth = market.data.ethereum.usd;
     const sol = market.data.solana.usd;
 
+    // Step 2: send prompt to AI model
     const prompt = `
 You are a crypto analyst.
 
-IMPORTANT RULES:
-- No explanations, no reasoning, no thinking steps
-- No extra text before or after
-- Keep it under 30 words total
+RULES:
+- No reasoning
+- Max 30 words
+- Only final insight
 
 Prices:
-Bitcoin: $${btc}
-Ethereum: $${eth}
-Solana: $${sol}
-
+BTC: $${btc}
+ETH: $${eth}
+SOL: $${sol}
 `;
 
     const response = await axios.post(
-      
-  "https://router.huggingface.co/v1/chat/completions",
-  {
-    model: "deepseek-ai/DeepSeek-V4-Pro",
-    messages: [
+      "https://router.huggingface.co/v1/chat/completions",
       {
-        role: "user",
-        content: prompt
+        model: "deepseek-ai/DeepSeek-V4-Pro",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.2,
+        max_tokens: 300,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.HF_API_KEY}`,
+          "Content-Type": "application/json",
+        },
       }
-    ],
-    temperature: 0.2,
-    max_tokens: 300
-  },
-  {
-    headers: {
-      Authorization: `Bearer ${process.env.HF_API_KEY}`,
-      "Content-Type": "application/json"
-    }
-  }
-);
-    console.log("HF RAW RESPONSE:", JSON.stringify(response.data, null, 2));
+    );
+
     const insight =
       response.data?.choices?.[0]?.message?.content?.trim() ||
-      "Market is stable with moderate volatility.";
+      "Market is stable.";
 
     res.json({ insight });
-
   } catch (err) {
     console.error("AI INSIGHT ERROR:", err.response?.data || err.message);
 
     res.json({
-      insight: "Market data temporarily unavailable."
+      insight: "Market data temporarily unavailable.",
     });
   }
 });
 
-
-// ================= MEMES =================
+// ================= MEME SYSTEM =================
+// Returns random meme from predefined list
 app.get("/meme", authMiddleware, async (req, res) => {
-
   try {
-
     const memes = [
-
-      {
-        text: "Bought the dip. It kept dipping.",
-        image:
-          "https://i.imgflip.com/54hjww.jpg"
-      },
-
-      {
-        text: "Crypto traders checking charts at 3AM",
-        image:
-          "https://i.imgflip.com/3si4.jpg"
-      },
-
-      {
-        text: "When BTC goes up 1%",
-        image:
-          "https://i.imgflip.com/1bij.jpg"
-      },
-
-      {
-        text: "HODL mode activated",
-        image:
-          "https://i.imgflip.com/26am.jpg"
-      }
-
+      { text: "Bought the dip. It kept dipping.", image: "https://i.imgflip.com/54hjww.jpg" },
+      { text: "Crypto traders checking charts at 3AM", image: "https://i.imgflip.com/3si4.jpg" },
+      { text: "When BTC goes up 1%", image: "https://i.imgflip.com/1bij.jpg" },
+      { text: "HODL mode activated", image: "https://i.imgflip.com/26am.jpg" },
     ];
 
-    const randomIndex =
-      Math.floor(Math.random() * memes.length);
+    const random = memes[Math.floor(Math.random() * memes.length)];
 
-    res.json(memes[randomIndex]);
-
+    res.json(random);
   } catch (err) {
-
     console.error("MEME ERROR:", err);
-
-    res.status(500).json({
-      error: "Failed to load meme"
-    });
+    res.status(500).json({ error: "Failed to load meme" });
   }
 });
 
-// ================= VOTING =================
-app.post("/vote", authMiddleware, async (req, res) => {
+// ================= VOTING SYSTEM =================
 
+// Save or update user vote for a section (AI, news, prices, etc.)
+app.post("/vote", authMiddleware, async (req, res) => {
   const { sectionName, vote } = req.body;
 
   try {
-
-    // ================= REMOVE VOTE =================
+    // If vote is null → user is removing vote
     if (vote === null) {
-
       await pool.query(
-        `
-        DELETE FROM votes
-        WHERE user_id = $1
-        AND section_name = $2
-        AND created_at = CURRENT_DATE
-        `,
-        [
-          req.user.userId,
-          sectionName
-        ]
+        `DELETE FROM votes WHERE user_id=$1 AND section_name=$2 AND created_at=CURRENT_DATE`,
+        [req.user.userId, sectionName]
       );
 
-      return res.json({
-        message: "Vote removed"
-      });
+      return res.json({ message: "Vote removed" });
     }
 
-    // ================= INSERT OR UPDATE =================
+    // Otherwise insert or update vote
     const result = await pool.query(
       `
-      INSERT INTO votes (
-        user_id,
-        section_name,
-        vote
-      )
-      VALUES (
-        $1,
-        $2,
-        $3
-      )
-
-      ON CONFLICT (
-        user_id,
-        section_name,
-        created_at
-      )
-
-      DO UPDATE SET
-        vote = $3
-
+      INSERT INTO votes (user_id, section_name, vote)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (user_id, section_name, created_at)
+      DO UPDATE SET vote = $3
       RETURNING *
       `,
-      [
-        req.user.userId,
-        sectionName,
-        vote
-      ]
+      [req.user.userId, sectionName, vote]
     );
 
     res.json(result.rows[0]);
-
   } catch (err) {
-
     console.error("VOTE ERROR:", err);
-
-    res.status(500).json({
-      error: "Failed to save vote"
-    });
+    res.status(500).json({ error: "Failed to save vote" });
   }
 });
 
-// ================= GET USER VOTES =================
+// Get today's votes for this user
 app.get("/votes", authMiddleware, async (req, res) => {
-
   try {
-
     const result = await pool.query(
       `
       SELECT section_name, vote
       FROM votes
-      WHERE user_id = $1
-      AND created_at = CURRENT_DATE
+      WHERE user_id=$1 AND created_at=CURRENT_DATE
       `,
       [req.user.userId]
     );
 
     res.json(result.rows);
-
   } catch (err) {
-
     console.error("GET VOTES ERROR:", err);
-
-    res.status(500).json({
-      error: "Failed to fetch votes"
-    });
+    res.status(500).json({ error: "Failed to fetch votes" });
   }
 });
 
-//  ================= START SERVER =================
-// app.listen(5000, () => {
-//   console.log("Server running on port 5000");
-// });
+// ================= START SERVER =================
+// This starts the backend server and makes it listen for requests
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
