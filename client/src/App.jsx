@@ -402,93 +402,125 @@ const loadMeme = async () => {
 {step === "auth" && (
   <div
     style={{
+      height: "100vh",
       display: "flex",
-      gap: "40px",
       justifyContent: "center",
-      alignItems: "flex-start",
-      flexWrap: "wrap"
+      alignItems: "center",
+      backgroundColor: "#f9fafb"
     }}
   >
+    <div
+      style={{
+        display: "flex",
+        gap: "40px",
+        alignItems: "stretch"
+      }}
+    >
 
-    {/* ================= SIGNUP ================= */}
-    <div style={{ width: "320px" }}>
-      <h2 style={{ marginBottom: "15px" }}>Sign Up</h2>
-
-      <input
-        name="name"
-        placeholder="Name"
-        onChange={handleChange}
-        style={ui.input.base}
-      />
-
-      <input
-        name="email"
-        placeholder="Email"
-        onChange={handleChange}
-        style={ui.input.base}
-      />
-
-      <input
-        name="password"
-        placeholder="Password"
-        type="password"
-        onChange={handleChange}
-        style={ui.input.base}
-      />
-
-      <button
-        onClick={handleSignup}
+      {/* ================= SIGNUP ================= */}
+      <div
         style={{
-          ...ui.button.base,
-          ...ui.button.primary,
-          width: "100%",
-          marginTop: "10px"
+          width: "320px",
+          background: "white",
+          padding: "25px",
+          borderRadius: "12px",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+          display: "flex",
+          flexDirection: "column"
         }}
       >
-        Create Account
-      </button>
-    </div>
+        <h2 style={{ marginBottom: "15px" }}>Sign Up</h2>
 
-    {/* ================= LOGIN ================= */}
-    <div style={{ width: "320px" }}>
-      <h2 style={{ marginBottom: "15px" }}>Login</h2>
+        <input
+          name="name"
+          placeholder="Name"
+          onChange={handleChange}
+          style={ui.input.base}
+        />
 
-      <input
-        placeholder="Email"
-        onChange={(e) =>
-          setLoginForm({
-            ...loginForm,
-            email: e.target.value
-          })
-        }
-        style={ui.input.base}
-      />
+        <input
+          name="email"
+          placeholder="Email"
+          onChange={handleChange}
+          style={ui.input.base}
+        />
 
-      <input
-        placeholder="Password"
-        type="password"
-        onChange={(e) =>
-          setLoginForm({
-            ...loginForm,
-            password: e.target.value
-          })
-        }
-        style={ui.input.base}
-      />
+        <input
+          name="password"
+          placeholder="Password"
+          type="password"
+          onChange={handleChange}
+          style={ui.input.base}
+        />
 
-      <button
-        onClick={handleLogin}
+        {/* pushes button to bottom for alignment */}
+        <div style={{ marginTop: "auto" }}>
+          <button
+            onClick={handleSignup}
+            style={{
+              ...ui.button.base,
+              ...ui.button.primary,
+              width: "100%"
+            }}
+          >
+            Create Account
+          </button>
+        </div>
+      </div>
+
+      {/* ================= LOGIN ================= */}
+      <div
         style={{
-          ...ui.button.base,
-          ...ui.button.secondary,
-          width: "100%",
-          marginTop: "10px"
+          width: "320px",
+          background: "white",
+          padding: "25px",
+          borderRadius: "12px",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+          display: "flex",
+          flexDirection: "column"
         }}
       >
-        Login
-      </button>
-    </div>
+        <h2 style={{ marginBottom: "15px" }}>Login</h2>
 
+        <input
+          placeholder="Email"
+          onChange={(e) =>
+            setLoginForm({
+              ...loginForm,
+              email: e.target.value
+            })
+          }
+          style={ui.input.base}
+        />
+
+        <input
+          placeholder="Password"
+          type="password"
+          onChange={(e) =>
+            setLoginForm({
+              ...loginForm,
+              password: e.target.value
+            })
+          }
+          style={ui.input.base}
+        />
+
+        {/* spacer so button aligns with signup button */}
+        <div style={{ marginTop: "auto" }}>
+          <button
+            onClick={handleLogin}
+            style={{
+              ...ui.button.base,
+              ...ui.button.secondary,
+              width: "100%"
+            }}
+          >
+            Login
+          </button>
+        </div>
+      </div>
+
+    </div>
   </div>
 )}
 
