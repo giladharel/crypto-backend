@@ -31,7 +31,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173", // local development
-      "https://crypto-backend-b5dhw5cra-crypto-gilad.vercel.app", // production frontend
+      "https://crypto-backend-omega.vercel.app/", // production frontend
     ],
     credentials: true,
   })
