@@ -400,132 +400,94 @@ const loadMeme = async () => {
 
       {/* ================= AUTH ================= */}
 {step === "auth" && (
-  <div style={{ maxWidth: "350px" }}>
+  <div
+    style={{
+      display: "flex",
+      gap: "40px",
+      justifyContent: "center",
+      alignItems: "flex-start",
+      flexWrap: "wrap"
+    }}
+  >
 
-    <h1 style={{ marginBottom: "10px" }}>Signup</h1>
+    {/* ================= SIGNUP ================= */}
+    <div style={{ width: "320px" }}>
+      <h2 style={{ marginBottom: "15px" }}>Sign Up</h2>
 
-    <input
-      name="name"
-      placeholder="Name"
-      onChange={handleChange}
-      style={ui.input.base}
-      onFocus={(e) => {
-        e.currentTarget.style.border = "1px solid #2563eb";
-        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(37,99,235,0.15)";
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.border = "1px solid #e5e7eb";
-        e.currentTarget.style.boxShadow = "none";
-      }}
-    />
+      <input
+        name="name"
+        placeholder="Name"
+        onChange={handleChange}
+        style={ui.input.base}
+      />
 
-    <input
-      name="email"
-      placeholder="Email"
-      onChange={handleChange}
-      style={ui.input.base}
-      onFocus={(e) => {
-        e.currentTarget.style.border = "1px solid #2563eb";
-        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(37,99,235,0.15)";
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.border = "1px solid #e5e7eb";
-        e.currentTarget.style.boxShadow = "none";
-      }}
-    />
+      <input
+        name="email"
+        placeholder="Email"
+        onChange={handleChange}
+        style={ui.input.base}
+      />
 
-    <input
-      name="password"
-      placeholder="Password"
-      type="password"
-      onChange={handleChange}
-      style={ui.input.base}
-      onFocus={(e) => {
-        e.currentTarget.style.border = "1px solid #2563eb";
-        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(37,99,235,0.15)";
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.border = "1px solid #e5e7eb";
-        e.currentTarget.style.boxShadow = "none";
-      }}
-    />
+      <input
+        name="password"
+        placeholder="Password"
+        type="password"
+        onChange={handleChange}
+        style={ui.input.base}
+      />
 
-    <button
-      onClick={handleSignup}
-      style={{
-        ...ui.button.base,
-        ...ui.button.primary,
-        width: "100%",
-        marginTop: "10px"
-      }}
-      onMouseEnter={(e) => hover(e, true)}
-      onMouseLeave={(e) => hover(e, false)}
-    >
-      Sign Up
-    </button>
+      <button
+        onClick={handleSignup}
+        style={{
+          ...ui.button.base,
+          ...ui.button.primary,
+          width: "100%",
+          marginTop: "10px"
+        }}
+      >
+        Create Account
+      </button>
+    </div>
 
-    <hr style={{ margin: "20px 0" }} />
+    {/* ================= LOGIN ================= */}
+    <div style={{ width: "320px" }}>
+      <h2 style={{ marginBottom: "15px" }}>Login</h2>
 
-    <h1 style={{ marginBottom: "10px" }}>Login</h1>
+      <input
+        placeholder="Email"
+        onChange={(e) =>
+          setLoginForm({
+            ...loginForm,
+            email: e.target.value
+          })
+        }
+        style={ui.input.base}
+      />
 
-    <input
-      placeholder="Email"
-      onChange={(e) =>
-        setLoginForm({
-          ...loginForm,
-          email: e.target.value
-        })
-      }
-      style={ui.input.base}
-      onFocus={(e) => {
-        e.currentTarget.style.border = "1px solid #2563eb";
-        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(37,99,235,0.15)";
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.border = "1px solid #e5e7eb";
-        e.currentTarget.style.boxShadow = "none";
-      }}
-    />
+      <input
+        placeholder="Password"
+        type="password"
+        onChange={(e) =>
+          setLoginForm({
+            ...loginForm,
+            password: e.target.value
+          })
+        }
+        style={ui.input.base}
+      />
 
-    <input
-      placeholder="Password"
-      type="password"
-      onChange={(e) =>
-        setLoginForm({
-          ...loginForm,
-          password: e.target.value
-        })
-      }
-      style={ui.input.base}
-      onFocus={(e) => {
-        e.currentTarget.style.border = "1px solid #2563eb";
-        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(37,99,235,0.15)";
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.border = "1px solid #e5e7eb";
-        e.currentTarget.style.boxShadow = "none";
-      }}
-    />
-
-    <button
-      onClick={handleLogin}
-      style={{
-        ...ui.button.base,
-        ...ui.button.secondary,
-        width: "100%",
-        marginTop: "10px"
-      }}
-      onMouseEnter={(e) => hover(e, true)}
-      onMouseLeave={(e) => hover(e, false)}
-    >
-      Login
-    </button>
-
-    {error && (
-      <p style={{ color: "#ef4444", marginTop: "10px" }}>
-        {error}
-      </p>
-    )}
+      <button
+        onClick={handleLogin}
+        style={{
+          ...ui.button.base,
+          ...ui.button.secondary,
+          width: "100%",
+          marginTop: "10px"
+        }}
+      >
+        Login
+      </button>
+    </div>
 
   </div>
 )}
