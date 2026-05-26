@@ -14,6 +14,64 @@ function App() {
   const [loadingPrices, setLoadingPrices] = useState(false);
   const [priceCooldown, setPriceCooldown] = useState(false);
   const [selectedSection, setSelectedSection] = useState(null);
+  const ui = {
+  button: {
+    base: {
+      padding: "10px 14px",
+      borderRadius: "10px",
+      border: "1px solid #e5e7eb",
+      cursor: "pointer",
+      fontWeight: "600",
+      transition: "all 0.2s ease",
+      fontSize: "14px",
+      outline: "none",
+    },
+
+    primary: {
+      backgroundColor: "#2563eb",
+      color: "white",
+      border: "none",
+    },
+
+    secondary: {
+      backgroundColor: "#f3f4f6",
+      color: "#111",
+      border: "1px solid #e5e7eb",
+    },
+
+    danger: {
+      backgroundColor: "#ef4444",
+      color: "white",
+      border: "none",
+    },
+
+    success: {
+      backgroundColor: "#22c55e",
+      color: "white",
+      border: "none",
+    },
+  },
+
+  input: {
+    base: {
+      padding: "10px 12px",
+      borderRadius: "10px",
+      border: "1px solid #e5e7eb",
+      outline: "none",
+      fontSize: "14px",
+      width: "250px",
+      transition: "all 0.2s ease",
+      marginBottom: "10px",
+    },
+  },
+};
+
+const hover = (e, on) => {
+  e.currentTarget.style.transform = on ? "translateY(-2px)" : "translateY(0)";
+  e.currentTarget.style.boxShadow = on
+    ? "0 6px 20px rgba(0,0,0,0.12)"
+    : "none";
+};
 
   // ================= VOTE STATES =================
   const [votes, setVotes] = useState({});
@@ -341,83 +399,136 @@ const loadMeme = async () => {
     <div style={{ padding: "20px" }}>
 
       {/* ================= AUTH ================= */}
-      {step === "auth" && (
-        <>
+{step === "auth" && (
+  <div style={{ maxWidth: "350px" }}>
 
-          <h1>Signup</h1>
+    <h1 style={{ marginBottom: "10px" }}>Signup</h1>
 
-          <input
-            name="name"
-            placeholder="Name"
-            onChange={handleChange}
-          />
+    <input
+      name="name"
+      placeholder="Name"
+      onChange={handleChange}
+      style={ui.input.base}
+      onFocus={(e) => {
+        e.currentTarget.style.border = "1px solid #2563eb";
+        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(37,99,235,0.15)";
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.border = "1px solid #e5e7eb";
+        e.currentTarget.style.boxShadow = "none";
+      }}
+    />
 
-          <br />
+    <input
+      name="email"
+      placeholder="Email"
+      onChange={handleChange}
+      style={ui.input.base}
+      onFocus={(e) => {
+        e.currentTarget.style.border = "1px solid #2563eb";
+        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(37,99,235,0.15)";
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.border = "1px solid #e5e7eb";
+        e.currentTarget.style.boxShadow = "none";
+      }}
+    />
 
-          <input
-            name="email"
-            placeholder="Email"
-            onChange={handleChange}
-          />
+    <input
+      name="password"
+      placeholder="Password"
+      type="password"
+      onChange={handleChange}
+      style={ui.input.base}
+      onFocus={(e) => {
+        e.currentTarget.style.border = "1px solid #2563eb";
+        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(37,99,235,0.15)";
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.border = "1px solid #e5e7eb";
+        e.currentTarget.style.boxShadow = "none";
+      }}
+    />
 
-          <br />
+    <button
+      onClick={handleSignup}
+      style={{
+        ...ui.button.base,
+        ...ui.button.primary,
+        width: "100%",
+        marginTop: "10px"
+      }}
+      onMouseEnter={(e) => hover(e, true)}
+      onMouseLeave={(e) => hover(e, false)}
+    >
+      Sign Up
+    </button>
 
-          <input
-            name="password"
-            placeholder="Password"
-            type="password"
-            onChange={handleChange}
-          />
+    <hr style={{ margin: "20px 0" }} />
 
-          <br />
+    <h1 style={{ marginBottom: "10px" }}>Login</h1>
 
-          <button onClick={handleSignup}>
-            Sign Up
-          </button>
+    <input
+      placeholder="Email"
+      onChange={(e) =>
+        setLoginForm({
+          ...loginForm,
+          email: e.target.value
+        })
+      }
+      style={ui.input.base}
+      onFocus={(e) => {
+        e.currentTarget.style.border = "1px solid #2563eb";
+        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(37,99,235,0.15)";
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.border = "1px solid #e5e7eb";
+        e.currentTarget.style.boxShadow = "none";
+      }}
+    />
 
-          <hr />
+    <input
+      placeholder="Password"
+      type="password"
+      onChange={(e) =>
+        setLoginForm({
+          ...loginForm,
+          password: e.target.value
+        })
+      }
+      style={ui.input.base}
+      onFocus={(e) => {
+        e.currentTarget.style.border = "1px solid #2563eb";
+        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(37,99,235,0.15)";
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.border = "1px solid #e5e7eb";
+        e.currentTarget.style.boxShadow = "none";
+      }}
+    />
 
-          <h1>Login</h1>
+    <button
+      onClick={handleLogin}
+      style={{
+        ...ui.button.base,
+        ...ui.button.secondary,
+        width: "100%",
+        marginTop: "10px"
+      }}
+      onMouseEnter={(e) => hover(e, true)}
+      onMouseLeave={(e) => hover(e, false)}
+    >
+      Login
+    </button>
 
-          <input
-            name="email"
-            placeholder="Email"
-            onChange={(e) =>
-              setLoginForm({
-                ...loginForm,
-                email: e.target.value
-              })
-            }
-          />
+    {error && (
+      <p style={{ color: "#ef4444", marginTop: "10px" }}>
+        {error}
+      </p>
+    )}
 
-          <br />
-
-          <input
-            name="password"
-            placeholder="Password"
-            type="password"
-            onChange={(e) =>
-              setLoginForm({
-                ...loginForm,
-                password: e.target.value
-              })
-            }
-          />
-
-          <br />
-
-          <button onClick={handleLogin}>
-            Login
-          </button>
-
-          {error && (
-            <p style={{ color: "red", marginTop: "10px" }}>
-              {error}
-            </p>
-          )}
-
-        </>
-      )}
+  </div>
+)}
 
       {/* ================= ONBOARDING ================= */}
       {step === "onboarding" && (
