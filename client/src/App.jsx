@@ -14,6 +14,7 @@ function App() {
   const [loadingPrices, setLoadingPrices] = useState(false);
   const [priceCooldown, setPriceCooldown] = useState(false);
   const [selectedSection, setSelectedSection] = useState(null);
+  const [onboardingError, setOnboardingError] = useState("");
   const ui = {
   button: {
     base: {
@@ -65,6 +66,7 @@ function App() {
     },
   },
 };
+
 
 const hover = (e, on) => {
   e.currentTarget.style.transform = on ? "translateY(-2px)" : "translateY(0)";
@@ -284,6 +286,26 @@ const hover = (e, on) => {
 
   // ================= ONBOARDING =================
   const submitOnboarding = async () => {
+
+    // reset old error
+    setOnboardingError("");
+
+    // validate assets
+    if (!onboarding.assets.trim()) {
+      setOnboardingError(
+        "Must choose crypto assets"
+      );
+      return;
+    }
+
+    // validate investor type
+    if (!onboarding.investorType) {
+      setOnboardingError(
+        "Must choose investor type"
+      );
+      return;
+    }
+
     try {
 
       const jwt = token || localStorage.getItem("token");
@@ -525,106 +547,247 @@ const loadMeme = async () => {
 )}
 
       {/* ================= ONBOARDING ================= */}
-      {step === "onboarding" && (
-        <div>
+{step === "onboarding" && (
+  <div
+    style={{
+      minHeight: "100vh",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      background:
+        "linear-gradient(to bottom right, #f8fafc, #e2e8f0)",
+      padding: "20px"
+    }}
+  >
+    <div
+      style={{
+        width: "100%",
+        maxWidth: "700px",
+        backgroundColor: "white",
+        padding: "40px",
+        borderRadius: "24px",
+        boxShadow: "0 15px 40px rgba(0,0,0,0.08)"
+      }}
+    >
 
-          <h1>Onboarding</h1>
+      <h1
+        style={{
+          marginBottom: "10px",
+          fontSize: "36px",
+          textAlign: "center"
+        }}
+      >
+        Welcome 👋
+      </h1>
 
-          <h3>
-            What crypto assets are you interested in?
-          </h3>
+      <p
+        style={{
+          textAlign: "center",
+          color: "#64748b",
+          marginBottom: "40px",
+          fontSize: "16px"
+        }}
+      >
+        Personalize your crypto dashboard
+      </p>
 
-          <input
-            placeholder="e.g. BTC, ETH, SOL"
-            value={onboarding.assets}
-            onChange={(e) =>
-              setOnboarding({
-                ...onboarding,
-                assets: e.target.value
-              })
-            }
-          />
+      {/* ================= ASSETS ================= */}
+      <div style={{ marginBottom: "30px" }}>
 
-          <br />
-          <br />
+        <h3
+          style={{
+            marginBottom: "12px",
+            color: "#111827"
+          }}
+        >
+          What crypto assets are you interested in?
+        </h3>
 
-          <h3>
-            What type of investor are you?
-          </h3>
+        <input
+          placeholder="e.g. BTC, ETH, SOL"
+          value={onboarding.assets}
+          onChange={(e) =>
+            setOnboarding({
+              ...onboarding,
+              assets: e.target.value
+            })
+          }
+          style={{
+            ...ui.input.base,
+            width: "100%"
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.border =
+              "1px solid #2563eb";
+            e.currentTarget.style.boxShadow =
+              "0 0 0 3px rgba(37,99,235,0.15)";
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.border =
+              "1px solid #e5e7eb";
+            e.currentTarget.style.boxShadow = "none";
+          }}
+        />
 
-          <select
-            value={onboarding.investorType}
-            onChange={(e) =>
-              setOnboarding({
-                ...onboarding,
-                investorType: e.target.value
-              })
-            }
-          >
-            <option value="">
-              Select...
-            </option>
+      </div>
 
-            <option value="HODLer">
-              HODLer
-            </option>
+      {/* ================= INVESTOR TYPE ================= */}
+      <div style={{ marginBottom: "30px" }}>
 
-            <option value="Day Trader">
-              Day Trader
-            </option>
+        <h3
+          style={{
+            marginBottom: "12px",
+            color: "#111827"
+          }}
+        >
+          What type of investor are you?
+        </h3>
 
-            <option value="NFT Collector">
-              NFT Collector
-            </option>
-          </select>
+        <select
+          value={onboarding.investorType}
+          onChange={(e) =>
+            setOnboarding({
+              ...onboarding,
+              investorType: e.target.value
+            })
+          }
+          style={{
+            ...ui.input.base,
+            width: "100%",
+            cursor: "pointer",
+            backgroundColor: "white",
+            textAlign: "center"
+          }}
+        >
+          <option value="">
+            Select investor type
+          </option>
 
-          <br />
-          <br />
+          <option value="HODLer">
+            HODLer
+          </option>
 
-          <h3>
-            What content would you like to see?
-          </h3>
+          <option value="Day Trader">
+            Day Trader
+          </option>
 
-          {["Market News", "Charts", "Social", "Fun"].map((item) => (
-            <button
-              key={item}
-              onClick={() => {
+          <option value="NFT Collector">
+            NFT Collector
+          </option>
+        </select>
 
-                const exists =
-                  onboarding.contentTypes.includes(item);
+      </div>
 
-                setOnboarding({
-                  ...onboarding,
-                  contentTypes: exists
-                    ? onboarding.contentTypes.filter(
-                        (x) => x !== item
-                      )
-                    : [...onboarding.contentTypes, item]
-                });
-              }}
-              style={{
-                marginRight: "10px",
-                backgroundColor:
-                  onboarding.contentTypes.includes(item)
-                    ? "green"
-                    : "lightgray"
-              }}
-            >
-              {item}
-            </button>
-          ))}
+      {/* ================= CONTENT TYPES ================= */}
+      <div style={{ marginBottom: "40px" }}>
 
-          <br />
-          <br />
+        <h3
+          style={{
+            marginBottom: "15px",
+            color: "#111827",
+            textAlign: "center"
+          }}
+        >
+          What content would you like to see?
+        </h3>
 
-          <button onClick={submitOnboarding}>
-            Continue
-          </button>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "12px",
+            justifyContent: "center",
+            alignItems: "center"
+          }}
+        >
+          {[
+            "Market News",
+            "Charts",
+            "Social",
+            "Fun"
+          ].map((item) => {
 
+            const selected =
+              onboarding.contentTypes.includes(item);
+
+            return (
+              <button
+                key={item}
+                onClick={() => {
+
+                  const exists =
+                    onboarding.contentTypes.includes(item);
+
+                  setOnboarding({
+                    ...onboarding,
+                    contentTypes: exists
+                      ? onboarding.contentTypes.filter(
+                          (x) => x !== item
+                        )
+                      : [
+                          ...onboarding.contentTypes,
+                          item
+                        ]
+                  });
+                }}
+                style={{
+                  ...ui.button.base,
+                  backgroundColor: selected
+                    ? "#16922e"
+                    : "#f3f4f6",
+                  color: selected
+                    ? "white"
+                    : "#111827",
+                  border: selected
+                    ? "none"
+                    : "1px solid #e5e7eb",
+                  padding: "12px 18px"
+                }}
+                onMouseEnter={(e) => hover(e, true)}
+                onMouseLeave={(e) => hover(e, false)}
+              >
+                {item}
+              </button>
+            );
+          })}
         </div>
+
+      </div>
+
+      {/* ================= CONTINUE BUTTON ================= */}
+
+      {onboardingError && (
+        <p
+          style={{
+            color: "#ef4444",
+            textAlign: "center",
+            marginBottom: "20px",
+            fontWeight: "600"
+          }}
+        >
+          {onboardingError}
+        </p>
       )}
 
-      {/* ================= DASHBOARD ================= */}
+      <button
+        onClick={submitOnboarding}
+        style={{
+          ...ui.button.base,
+          ...ui.button.primary,
+          width: "100%",
+          padding: "14px",
+          fontSize: "16px"
+        }}
+        onMouseEnter={(e) => hover(e, true)}
+        onMouseLeave={(e) => hover(e, false)}
+      >
+        Continue →
+      </button>
+
+    </div>
+  </div>
+)}
+
       {/* ================= DASHBOARD ================= */}
 {step === "dashboard" && (
   <div>
@@ -915,12 +1078,21 @@ const loadMeme = async () => {
 
         <button
           onClick={async () => {
-          await loadMeme();
-          setSelectedSection(null);
-        }}
+            await loadMeme();
+            setSelectedSection(null);
+          }}
+          style={{
+            ...ui.button.base,
+            ...ui.button.secondary,
+            marginBottom: "20px",
+            padding: "10px 16px",
+            borderRadius: "12px"
+          }}
+          onMouseEnter={(e) => hover(e, true)}
+          onMouseLeave={(e) => hover(e, false)}
         >
           ← Back
-        </button>
+          </button>
 
         <h1>AI Insight</h1>
 
@@ -978,9 +1150,18 @@ const loadMeme = async () => {
             await loadMeme();
             setSelectedSection(null);
           }}
+          style={{
+            ...ui.button.base,
+            ...ui.button.secondary,
+            marginBottom: "20px",
+            padding: "10px 16px",
+            borderRadius: "12px"
+          }}
+          onMouseEnter={(e) => hover(e, true)}
+          onMouseLeave={(e) => hover(e, false)}
         >
           ← Back
-        </button>
+          </button>
 
         <h1>Coin Prices</h1>
 
@@ -1060,9 +1241,18 @@ const loadMeme = async () => {
             await loadMeme();
             setSelectedSection(null);
           }}
+          style={{
+            ...ui.button.base,
+            ...ui.button.secondary,
+            marginBottom: "20px",
+            padding: "10px 16px",
+            borderRadius: "12px"
+          }}
+          onMouseEnter={(e) => hover(e, true)}
+          onMouseLeave={(e) => hover(e, false)}
         >
           ← Back
-        </button>
+          </button>
 
         <h1>Meme of the Moment</h1>
 
@@ -1128,9 +1318,18 @@ const loadMeme = async () => {
             await loadMeme();
             setSelectedSection(null);
           }}
+          style={{
+            ...ui.button.base,
+            ...ui.button.secondary,
+            marginBottom: "20px",
+            padding: "10px 16px",
+            borderRadius: "12px"
+          }}
+          onMouseEnter={(e) => hover(e, true)}
+          onMouseLeave={(e) => hover(e, false)}
         >
           ← Back
-        </button>
+          </button>
 
         <h1>Market News</h1>
 
