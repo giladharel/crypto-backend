@@ -472,6 +472,11 @@ const loadMeme = async () => {
           placeholder="Password"
           type="password"
           onChange={handleChange}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleSignup();
+            }
+          }}
           style={ui.input.base}
         />
 
@@ -524,6 +529,11 @@ const loadMeme = async () => {
               password: e.target.value
             })
           }
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleLogin();
+            }
+          }}
           style={ui.input.base}
         />
 
